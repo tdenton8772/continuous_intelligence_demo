@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="google" content="notranslate">
+    <meta http-equiv="Content-Language" content="en">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="{{ description }}" />
+    <meta name="robots" content="index, follow">
+
+    <link rel="apple-touch-icon" href="/static/images/favicon.ico" />
+    <link rel="icon" type="image/png" href="/static/images/favicon.ico">
+
+    <meta property="og:title" content="{{ title | default('Default') }}">
+    <meta property="og:site_name" content="My Site">
+    <meta property="og:url" content="{{ request.host_url | default('http://localhost:5000') }}">
+    <meta property="og:description" content="{{ description }}">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="/static/images/favicon.ico">
+
+    <meta property="twitter:card" content="summary">
+    <meta property="twitter:title" content="{{ title | default('Default') }}">
+    <meta property="twitter:description" content="{{ description }}">
+    <meta property="twitter:image" content="/static/images/favicon.ico">
+
+    <title>{{ title | default('Default') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+<div class="overlay"></div>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<ul class="flashed-messages">
+    {% for message in messages %}
+    <li>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+<!-- JavaScript at the bottom for better performance -->
+<script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script>
+    $SCRIPT_ROOT = {{ request.script_root | tojson | safe }};
+</script>
+</body>
+</html>
