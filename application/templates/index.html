@@ -26,28 +26,72 @@
 
     <title>{{ title | default('Default') }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    <style>
+        .machines {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+        .machine {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            width: 300px;
+        }
+        .machine img {
+            max-width: 100%;
+            height: auto;
+        }
+        @media (max-width: 900px) {
+            .machines {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="overlay"></div>
+    <div class="overlay"></div>
+    
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul class="flashed-messages">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    
+    <h1>Machine Control Panel</h1>
+    <div class="machines">
+        {% for machine in ["RTU_1", "RTU_2", "MAU_1"] %}
+        <div class="machine" id="{{ machine }}">
+            <h2>{{ machine }}</h2>
+            <img src="{{ url_for('static', filename='images/' + machine + '.png') }}" alt="{{ machine }} Image" width="150">
+            <br>
+            <button onclick="controlMachine('{{ machine }}', 'start')">Start</button>
+            <button onclick="controlMachine('{{ machine }}', 'stop')">Stop</button>
+            <button onclick="controlMachine('{{ machine }}', 'anomaly')">Insert Anomaly</button>
+            <p>Status: <span id="status_{{ machine }}">Idle</span></p>
+        </div>
+        {% endfor %}
+    </div>
 
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-<ul class="flashed-messages">
-    {% for message in messages %}
-    <li>{{ message }}</li>
-    {% endfor %}
-</ul>
-{% endif %}
-{% endwith %}
-
-{% block content %}{% endblock %}
-
-<!-- JavaScript at the bottom for better performance -->
-<script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
-<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-<script>
-    $SCRIPT_ROOT = {{ request.script_root | tojson | safe }};
-</script>
+    <script>
+        function controlMachine(machine, action) {
+            $.post(`/api/${action}/${machine}`, function(response) {
+                $(`#status_${machine}`).text(response.message);
+            }).fail(function(error) {
+                alert("Error: " + error.responseText);
+            });
+        }
+    </script>
 </body>
 </html>

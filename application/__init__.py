@@ -45,5 +45,8 @@ def unhandled_exception(error):
 from application.views import main
 application.register_blueprint(main.mod)
 
+from application.views import api
+application.register_blueprint(api.mod)
+
 if __name__ == "__main__":
     application.run(host="0.0.0.0", port=5000, debug=True)
