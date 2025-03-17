@@ -1,0 +1,54 @@
+{
+  "schemaName": "aws_demo",
+  "enableColumnBasedNullHandling": false,
+  "dimensionFieldSpecs": [
+    {
+      "name": "machine_id",
+      "dataType": "STRING",
+      "fieldType": "DIMENSION",
+      "notNull": false
+    },
+    {
+      "name": "status",
+      "dataType": "STRING",
+      "fieldType": "DIMENSION",
+      "notNull": false
+    }
+  ],
+  "metricFieldSpecs": [
+    {
+      "name": "temperature",
+      "dataType": "DOUBLE",
+      "fieldType": "METRIC",
+      "notNull": false
+    },
+    {
+      "name": "compressor_current",
+      "dataType": "DOUBLE",
+      "fieldType": "METRIC",
+      "notNull": false
+    },
+    {
+      "name": "fan_speed",
+      "dataType": "DOUBLE",
+      "fieldType": "METRIC",
+      "notNull": false
+    },
+    {
+      "name": "pressure",
+      "dataType": "DOUBLE",
+      "fieldType": "METRIC",
+      "notNull": false
+    }
+  ],
+  "dateTimeFieldSpecs": [
+    {
+      "name": "event_time",
+      "dataType": "LONG",
+      "fieldType": "DATE_TIME",
+      "notNull": false,
+      "format": "1:MILLISECONDS:EPOCH",
+      "granularity": "1:MILLISECONDS"
+    }
+  ]
+}

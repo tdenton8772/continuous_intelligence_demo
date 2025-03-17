@@ -1,0 +1,111 @@
+version: "3.8"
+services:
+  flask_app:
+    build: 
+      context: .
+      dockerfile: DockerFileControlPanel
+    container_name: flask_app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mqtt_bridge
+      - kinesis_setup
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=run.py
+    volumes:
+      - ./control_panel:/app
+      - ~/.aws:/root/.aws:ro  # Mount AWS credentials
+    command: ["python", "run.py"]
+
+  mqtt_bridge:
+    build: 
+      context: .
+      dockerfile: DockerFileMQTTBridge
+    container_name: mqtt_bridge
+    depends_on:
+      - kinesis_setup
+      - mqtt_broker
+    volumes:
+      - ./mqtt_proxy:/app
+      - ~/.aws:/root/.aws:ro  # Mount AWS credentials
+    command: ["python", "mqtt_bridge.py"]
+  
+  mqtt_broker:
+    image: eclipse-mosquitto
+    container_name: mqtt_broker
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mqtt_proxy/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ~/.aws:/root/.aws:ro  # Mount AWS credentials
+
+  # zookeeper:
+    # image: confluentinc/cp-zookeeper:latest
+    # container_name: zookeeper
+    # environment:
+    #   ZOOKEEPER_CLIENT_PORT: 2181
+    #   ZOOKEEPER_TICK_TIME: 2000
+    # ports:
+    #   - "2181:2181"
+    # healthcheck:
+    #   test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181", "|", "grep", "imok"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+
+  # kafka:
+  #   image: confluentinc/cp-kafka:latest
+  #   container_name: kafka
+  #   depends_on:
+  #     - zookeeper
+  #   environment:
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+  #     KAFKA_LISTENERS: INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:9092
+  #     KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092,EXTERNAL://98.58.127.45:9092
+  #     KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  #   ports:
+  #     - "9092:9092"
+  #   healthcheck:
+  #     test: ["CMD", "nc", "-z", "localhost", "19092"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  kinesis_setup:
+    image: amazon/aws-cli
+    container_name: kinesis_setup
+    environment:
+      - AWS_PROFILE=${AWS_PROFILE}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    volumes:
+      - ~/.aws:/root/.aws:ro  # Mount AWS credentials into container
+    entrypoint: >
+      /bin/sh -c "
+      aws kinesis describe-stream --stream-name RTU_Machine_Data --profile default || 
+      aws kinesis create-stream --stream-name RTU_Machine_Data --shard-count 1 --profile default &&
+      echo 'Kinesis stream created';
+      exit 0;"
+
+  pinot_setup:
+    image: curlimages/curl
+    container_name: pinot_setup
+    depends_on:
+      - kinesis_setup
+    environment:
+      - PINOT_API_KEY=${PINOT_API_KEY}
+      - PINOT_BROKER=${PINOT_BROKER}
+      - PINOT_CONTROLLER=${PINOT_CONTROLLER}
+    volumes:
+      - ./pinot_config:/config
+    entrypoint: >
+      /bin/sh -c "
+      sleep 20;
+      curl -X POST ${PINOT_CONTROLLER}/schemas -H 'accept: application/json' -H 'Authorization: Bearer ${PINOT_API_KEY}' -H 'Content-Type: application/json' -d @/config/table_1-schema.json;
+      curl -X POST ${PINOT_CONTROLLER}/tables -H 'accept: application/json' -H 'Authorization: Bearer ${PINOT_API_KEY}' -H 'Content-Type: application/json' -d @/config/table_1-table.json;
+      echo 'StarTree schema and table setup completed!';
+      exit 0;"
