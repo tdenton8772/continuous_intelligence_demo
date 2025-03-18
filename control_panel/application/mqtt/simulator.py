@@ -64,15 +64,45 @@ def publish_machine_data(machine_id):
 
 def publish_anomaly(machine_id):
     """Publishes an anomaly event to MQTT."""
+    
+    measurement_type = ['temperature', 'compressor_current', 'fan_speed', 'pressure']
+    measurement = random.choice(measurement_type)
+
+    sensor_data = update_sensor_values(machine_id)
+    if not sensor_data:
+        print(f"Error: No sensor data available for {machine_id}")
+        return
+
     anomaly_data = {
         "machine_id": machine_id,
-        "temperature": round(random.uniform(95.0, 120.0), 2),  # High temp anomaly
-        "compressor_current": round(random.uniform(15.0, 25.0), 2),  # Overloaded compressor
-        "fan_speed": random.randint(500, 2000),  # Erratic fan speed
-        "pressure": round(random.uniform(30.0, 70.0), 2),  # Out-of-range pressure
-        "event_time": int(round(time.time() * 1000)),
-        "status": "anomaly_detected"
+        **{key: round(value, 2) if isinstance(value, float) else value for key, value in sensor_data.items()},
+        "status": "Anomaly",
+        "event_time": int(round(time.time() * 1000))
     }
+
+    # Inject anomaly into the chosen measurement type
+    small_anomaly_ranges = {
+        "temperature": lambda: round(random.uniform(95.0, 120.0), 2),
+        "compressor_current": lambda: round(random.uniform(15.0, 25.0), 2),
+        "fan_speed": lambda: random.randint(500, 2000),
+        "pressure": lambda: round(random.uniform(30.0, 70.0), 2)
+    }
+
+    large_anomaly_ranges = {
+        "temperature": lambda: round(random.uniform(95.0, 120.0), 2),
+        "compressor_current": lambda: round(random.uniform(15.0, 25.0), 2),
+        "fan_speed": lambda: random.randint(500, 2000),
+        "pressure": lambda: round(random.uniform(30.0, 70.0), 2)
+    }
+
+    anomaly_type = ["small", "large"]
+    selected_type = random.choice(anomaly_type)
+
+    if selected_type == "small":
+        anomaly_data[measurement] = small_anomaly_ranges[measurement]()
+    else:
+        anomaly_data[measurement] = large_anomaly_ranges[measurement]()
+
     payload = json.dumps(anomaly_data)
     client.publish(MQTT_TOPIC, payload)
     print(f"[MQTT ANOMALY] {payload}")
