@@ -77,3 +77,20 @@ services:
       curl -X POST ${PINOT_CONTROLLER}/tables -H 'accept: application/json' -H 'Authorization: Bearer ${PINOT_API_KEY}' -H 'Content-Type: application/json' -d @/config/table_1-table.json;
       echo 'StarTree schema and table setup completed!';
       exit 0;"
+
+  anomaly_service:
+    build: 
+      context: .
+      dockerfile: DockerFileAnomalyDetection
+    container_name: anomaly_service
+    restart: unless-stopped
+    environment:
+      - PINOT_API_KEY=${PINOT_API_KEY}
+      - PINOT_BROKER=${PINOT_BROKER}
+      - PINOT_CONTROLLER=${PINOT_CONTROLLER}
+      - AWS_PROFILE=${AWS_PROFILE}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    volumes:
+      - ./anomaly_detection:/app
+      - ~/.aws:/root/.aws:ro
+    command: ["sh", "-c", "python detection.py && sleep 60"]

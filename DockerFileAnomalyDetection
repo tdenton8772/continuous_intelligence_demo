@@ -1,0 +1,16 @@
+# Use the official Python image as the base
+FROM python:3.10-slim
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the entire application directory to the container
+COPY anomaly_detection/detection.py /app
+COPY anomaly_detection/requirements.txt /app
+COPY anomaly_detection/queries.json /app
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Run the application
+CMD ["python", "detection.py"]
