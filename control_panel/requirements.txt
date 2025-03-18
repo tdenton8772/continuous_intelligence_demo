@@ -5,3 +5,4 @@ Flask-Session
 boto3
 paho-mqtt
 kafka-python
+requests

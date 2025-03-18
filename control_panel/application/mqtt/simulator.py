@@ -1,28 +1,21 @@
 import paho.mqtt.client as mqtt
-import boto3
 import time
 import json
 import random
-from os import getenv
 
 MQTT_BROKER = "mqtt_broker"
 MQTT_PORT = 1883
 MQTT_TOPIC = "factory/machines"
-KINESIS_STREAM_NAME = "RTU_Machine_Data"
 
 # Initialize MQTT client
 client = mqtt.Client()
 client.connect(MQTT_BROKER, MQTT_PORT, 60)
 
-# Initialize Kinesis client
-session = boto3.Session(profile_name='default')
-kinesis_client = session.client("kinesis", region_name="us-east-1")
-
 # Initial conditions for sensors
 machine_sensors = {
     "RTU_1": {"temperature": 75.0, "compressor_current": 10.0, "fan_speed": 1200, "pressure": 50.0},
     "RTU_2": {"temperature": 76.0, "compressor_current": 9.5, "fan_speed": 1250, "pressure": 48.5},
-    "MAU_1": {"temperature": 72.0, "compressor_current": 10.2, "fan_speed": 1300, "pressure": 49.0}
+    "RTU_3": {"temperature": 72.0, "compressor_current": 10.2, "fan_speed": 1300, "pressure": 49.0}
 }
 
 def update_sensor_values(machine_id):
@@ -51,7 +44,7 @@ def update_sensor_values(machine_id):
     return sensors
 
 def publish_machine_data(machine_id):
-    """Publishes simulated machine data to MQTT and Kinesis."""
+    """Publishes simulated machine data to MQTT."""
     sensor_data = update_sensor_values(machine_id)
     if not sensor_data:
         return
@@ -68,17 +61,9 @@ def publish_machine_data(machine_id):
     payload = json.dumps(data)
     client.publish(MQTT_TOPIC, payload)
     print(f"[MQTT PUBLISHED] {payload}")
-    
-    # Publish to Kinesis
-    kinesis_client.put_record(
-        StreamName=KINESIS_STREAM_NAME,
-        Data=payload,
-        PartitionKey=machine_id
-    )
-    print(f"[KINESIS PUBLISHED] {payload}")
 
 def publish_anomaly(machine_id):
-    """Publishes an anomaly event to MQTT and Kinesis."""
+    """Publishes an anomaly event to MQTT."""
     anomaly_data = {
         "machine_id": machine_id,
         "temperature": round(random.uniform(95.0, 120.0), 2),  # High temp anomaly
@@ -91,11 +76,3 @@ def publish_anomaly(machine_id):
     payload = json.dumps(anomaly_data)
     client.publish(MQTT_TOPIC, payload)
     print(f"[MQTT ANOMALY] {payload}")
-    
-    # Publish to Kinesis
-    kinesis_client.put_record(
-        StreamName=KINESIS_STREAM_NAME,
-        Data=payload,
-        PartitionKey=machine_id
-    )
-    print(f"[KINESIS ANOMALY] {payload}")

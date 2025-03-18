@@ -13,3 +13,5 @@
 ```bash
 docker compose up --build
 ```
+
+![Flow Chart](./continuous_intelligence_demo.png)

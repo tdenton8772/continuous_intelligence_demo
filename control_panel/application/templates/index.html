@@ -1,32 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="google" content="notranslate">
-    <meta http-equiv="Content-Language" content="en">
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="{{ description }}" />
-    <meta name="robots" content="index, follow">
-
-    <link rel="apple-touch-icon" href="/static/images/favicon.ico" />
-    <link rel="icon" type="image/png" href="/static/images/favicon.ico">
-
-    <meta property="og:title" content="{{ title | default('Default') }}">
-    <meta property="og:site_name" content="My Site">
-    <meta property="og:url" content="{{ request.host_url | default('http://localhost:5000') }}">
-    <meta property="og:description" content="{{ description }}">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="/static/images/favicon.ico">
-
-    <meta property="twitter:card" content="summary">
-    <meta property="twitter:title" content="{{ title | default('Default') }}">
-    <meta property="twitter:description" content="{{ description }}">
-    <meta property="twitter:image" content="/static/images/favicon.ico">
-
     <title>{{ title | default('Default') }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
     <style>
         .machines {
             display: flex;
@@ -68,10 +44,10 @@
     </ul>
     {% endif %}
     {% endwith %}
-    
-    <h1>Machine Control Panel</h1>
+
+    <h1>RTU Machine Control</h1>
     <div class="machines">
-        {% for machine in ["RTU_1", "RTU_2", "MAU_1"] %}
+        {% for machine in ["RTU_1", "RTU_2", "RTU_3"] %}
         <div class="machine" id="{{ machine }}">
             <h2>{{ machine }}</h2>
             <img src="{{ url_for('static', filename='images/' + machine + '.png') }}" alt="{{ machine }} Image" width="150">
@@ -80,18 +56,105 @@
             <button onclick="controlMachine('{{ machine }}', 'stop')">Stop</button>
             <button onclick="controlMachine('{{ machine }}', 'anomaly')">Insert Anomaly</button>
             <p>Status: <span id="status_{{ machine }}">Idle</span></p>
+            <table border="1" id="data_{{ machine }}" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Temperature (°F)</th>
+                        <th>Compressor Current (A)</th>
+                        <th>Fan Speed (RPM)</th>
+                        <th>Pressure (PSI)</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
         {% endfor %}
     </div>
-
+    
     <script>
         function controlMachine(machine, action) {
-            $.post(`/api/${action}/${machine}`, function(response) {
-                $(`#status_${machine}`).text(response.message);
-            }).fail(function(error) {
-                alert("Error: " + error.responseText);
-            });
+            fetch(`/api/${action}/${machine}`, { method: 'POST' })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.error || "Unknown error"); });
+                    }
+                    return response.json();
+                })
+                .catch(error => {
+                    alert("Error: " + error.message);
+                    console.error(`Error controlling ${machine}:`, error);
+                });
         }
+
+        let dataIntervals = {};
+    
+        function startFetchingData(machine) {
+            if (dataIntervals[machine]) return;
+
+            dataIntervals[machine] = setInterval(() => {
+                fetch(`/api/rtu_measurements/${machine}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) return;
+
+                        let tbody = document.querySelector(`#data_${machine} tbody`);
+                        tbody.innerHTML = "";
+
+                        let tr = document.createElement("tr");
+                        ["temperature", "compressor_current", "fan_speed", "pressure"].forEach(key => {
+                            let td = document.createElement("td");
+                            td.innerText = data[key] ?? "N/A";  // Handle missing values gracefully
+                            tr.appendChild(td);
+                        });
+
+                        tbody.appendChild(tr);
+                    })
+                    .catch(error => console.error(`Error fetching data for ${machine}:`, error));
+            }, 5000);
+        }
+
+    
+        function stopFetchingData(machine) {
+            clearInterval(dataIntervals[machine]);
+            delete dataIntervals[machine];
+        }
+
+        function updateMachineStatus(machine) {
+            fetch(`/api/machine_status/${machine}`)
+                .then(response => response.json())
+                .then(data => {
+                    let statusElement = document.getElementById(`status_${machine}`);
+                    let tableElement = document.getElementById(`data_${machine}`);
+
+                    if (data.error) {
+                        statusElement.innerText = "Error";
+                        tableElement.style.display = "none";
+                        stopFetchingData(machine);
+                        return;
+                    }
+
+                    statusElement.innerText = data.status;
+
+                    if (data.status === "Running") {
+                        tableElement.style.display = "block";
+                        startFetchingData(machine);
+                    } else {
+                        tableElement.style.display = "none";
+                        stopFetchingData(machine);
+                    }
+                })
+                .catch(error => console.error(`Error checking status for ${machine}:`, error));
+        }
+
+        // Poll machine status every 5 seconds
+        setInterval(() => {
+            ["RTU_1", "RTU_2", "RTU_3"].forEach(updateMachineStatus);
+        }, 5000);
+
+        // Run once on page load
+        ["RTU_1", "RTU_2", "RTU_3"].forEach(updateMachineStatus);
+
     </script>
 </body>
 </html>
+

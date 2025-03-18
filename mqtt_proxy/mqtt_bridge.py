@@ -1,37 +1,36 @@
-from kafka import KafkaProducer
+import boto3
 import paho.mqtt.client as mqtt
 import json
 import time
+import os
 
-KAFKA_BROKER = "kafka:9092"
 MQTT_BROKER = "mqtt_broker"
 MQTT_TOPIC = "factory/machines"
-KAFKA_TOPIC = "mqtt_data"
+KINESIS_STREAM_NAME = "RTU_Machine_Data"
+AWS_PROFILE = os.getenv("AWS_PROFILE", "default")
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
-# Retry logic for Kafka connection
-def create_kafka_producer():
-    while True:
-        try:
-            print("Attempting to connect to Kafka...")
-            producer = KafkaProducer(
-                bootstrap_servers=KAFKA_BROKER,
-                value_serializer=lambda v: json.dumps(v).encode("utf-8")
-            )
-            print("Connected to Kafka successfully!")
-            return producer
-        except Exception as e:
-            print(f"Kafka connection failed: {e}. Retrying in 5 seconds...")
-            time.sleep(5)
+# Initialize Kinesis client using AWS profile
+session = boto3.Session(profile_name=AWS_PROFILE)
+kinesis_client = session.client("kinesis", region_name=AWS_REGION)
 
-# Initialize Kafka producer with retries
-producer = create_kafka_producer()
+def send_to_kinesis(data):
+    """Sends MQTT data to Kinesis."""
+    try:
+        kinesis_client.put_record(
+            StreamName=KINESIS_STREAM_NAME,
+            Data=json.dumps(data),
+            PartitionKey=data.get("machine_id", "default")
+        )
+        print(f"Published to Kinesis: {data}")
+    except Exception as e:
+        print(f"Error sending to Kinesis: {e}")
 
 # MQTT message handler
 def on_message(client, userdata, msg):
     try:
         data = json.loads(msg.payload.decode())
-        producer.send(KAFKA_TOPIC, value=data)
-        print(f"Published to Kafka: {data}")
+        send_to_kinesis(data)
     except Exception as e:
         print(f"Error processing MQTT message: {e}")
 
@@ -41,5 +40,5 @@ client.connect(MQTT_BROKER, 1883)
 client.subscribe(MQTT_TOPIC)
 client.on_message = on_message
 
-print("MQTT to Kafka bridge is running...")
+print("MQTT to Kinesis bridge is running...")
 client.loop_forever()
