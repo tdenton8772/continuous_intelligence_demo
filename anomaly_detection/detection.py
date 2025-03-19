@@ -1,13 +1,22 @@
 import json
 import requests
 import os
+import boto3
+from langchain.embeddings import BedrockEmbeddings
 
 PINOT_BROKER = os.getenv("PINOT_BROKER")
 PINOT_API_KEY = os.getenv("PINOT_API_KEY")
 PINOT_QUERY_URL = f"{PINOT_BROKER}/query/sql" 
 
+session = boto3.Session(profile_name="default")
+bedrock_client = session.client(service_name='bedrock-runtime', 
+                              region_name='us-east-1')
+bedrock_embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v1",
+                                       client=bedrock_client)
+
 def main():
     try:
+        alerts = []
         with open("./queries.json", 'r') as f:
             raw_data = f.read()
         data = json.loads(raw_data)
@@ -47,10 +56,13 @@ def main():
                     column_names = resultsTable.get("dataSchema", {}).get("columnNames", [])
                     rows = resultsTable.get("rows", [])
                     if len(rows) > 0:
-                        print(f"Alert: {narrative}: {value}")
+                        alerts.append("{narrative}: {value}")
                 else:
                     json.dumps({"error": "Failed to fetch data"}), response.status_code
-            
+        if len(alerts) > 0:
+            text = " ".join(alerts)
+            response = bedrock_embeddings.embed_query(text)
+            print(response)
     except Exception as e:
         print("Execution Error:", str(e))
         return {"statusCode": 500, "body": str(e)}

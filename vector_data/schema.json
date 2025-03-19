@@ -1,0 +1,28 @@
+{
+    "schemaName": "vector_example",
+    "enableColumnBasedNullHandling": false,
+    "dimensionFieldSpecs": [
+      {
+        "name": "id",
+        "dataType": "STRING",
+        "fieldType": "DIMENSION",
+        "notNull": false
+      },
+      {
+        "name": "original_text",
+        "dataType": "STRING",
+        "fieldType": "DIMENSION",
+        "notNull": false
+      },
+      {
+        "name": "vector_data",
+        "dataType": "FLOAT",
+        "fieldType": "DIMENSION",
+        "singleValueField": false,
+        "notNull": false
+      }
+    ],
+    "primaryKeyColumns": [
+      "id"
+    ]
+  }

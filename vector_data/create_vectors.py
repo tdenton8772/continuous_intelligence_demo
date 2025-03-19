@@ -8,6 +8,7 @@ import boto3
 from langchain.embeddings import BedrockEmbeddings
 import json
 import time
+import uuid
 
 session = boto3.Session(profile_name="default")
 bedrock_client = session.client(service_name='bedrock-runtime', 
@@ -15,10 +16,7 @@ bedrock_client = session.client(service_name='bedrock-runtime',
 bedrock_embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v1",
                                        client=bedrock_client)
 
-import re
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer, WordNetLemmatizer
+
 
 # Initialize stemmer and lemmatizer
 stemmer = PorterStemmer()
@@ -61,7 +59,7 @@ def extract_text_from_pdf(pdf_path):
     return "\n".join(extracted_text)
 
 
-def split_text_into_chunks(text, chunk_size=512, chunk_overlap=50):
+def split_text_into_chunks(text, chunk_size=256, chunk_overlap=50):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size, chunk_overlap=chunk_overlap
     )
@@ -76,10 +74,12 @@ for split in split_text:
     cleaned_text = clean_text(split)
     response = bedrock_embeddings.embed_query(cleaned_text)
 
-    records.append({"text": split, "vector_data": response})
-    if len(records) > 100:
-        with open(f"{time.time()}.json", "w") as f:
-            f.write(json.dumps(records))
+    records.append({"original_text": split, 
+                    "vector_data": response, 
+                    "id": str(uuid.uuid4())})
+    if len(records) == 10:
+        with open(f"./data/{int(time.time())}.json", "w") as f:
+            f.write(json.dumps(records, indent=3))
         records = []
-with open(f"{time.time()}.json", "w") as f:
+with open(f"./data/{int(time.time())}.json", "w") as f:
     f.write(json.dumps(records))
