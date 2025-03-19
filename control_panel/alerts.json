@@ -1,3 +1,3 @@
 {
-    "alerts": ""
+    "alerts": "The fan_speed from the RTU is outside the predicted range: RTU_1 <br/> # ALERT: Fan Speed Outside Predicted Range\n\n## Issue\nThe fan speed for RTU_1 is operating outside the expected parameters.\n\n## Possible Causes\n- Variable speed system may be improperly responding to air condition sensing\n- Reduced airflow through the indoor coil\n- Refrigerant flow restriction through the outdoor coil\n- Potential issue with the reversing valve pilot assembly\n\n## Recommended Actions\n1. Check air condition sensors to ensure they are functioning properly\n2. Verify indoor coil airflow is unobstructed\n3. Inspect refrigerant flow through the outdoor coil\n4. Examine the reversing valve pilot valve assembly for proper operation\n5. Confirm pressure readings (normal operation is approximately 70 PSIG)\n\n## Priority: Medium\nSchedule maintenance within 24 hours to prevent system efficiency loss or potential damage."
 }

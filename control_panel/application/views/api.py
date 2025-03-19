@@ -49,11 +49,11 @@ def receive_alert():
 
     data = request.get_json()
     
-    if not data or "message" not in data:
+    if not data or "messages" not in data:
         return jsonify({"error": "Invalid alert message"}), 400
     
-    if isinstance(data['message'], list):
-        messages = "\n".join(data['message'])
+    if isinstance(data['messages'], list):
+        messages = "\n".join(data['messages'])
     else:
         messages = data['messages']
 

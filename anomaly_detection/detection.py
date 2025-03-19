@@ -114,7 +114,7 @@ def main():
                 # Create the payload
                 response_object = {
                     "alerts": alerts,
-                    "message": assistant_message  # Remove quotes; pass the variable itself
+                    "messages": assistant_message  # Remove quotes; pass the variable itself
                 }
 
                 # Send the alert to the Flask API
