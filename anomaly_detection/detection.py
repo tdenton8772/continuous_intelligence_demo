@@ -104,11 +104,27 @@ def main():
                     }),
                     modelId="us.anthropic.claude-3-7-sonnet-20250219-v1:0"
                 )
+
+                API_URL = "http://localhost:5000/api/alert"
+
+                # Extract response from Claude 3.7
                 response_body = json.loads(llm_response["body"].read())
-                assistant_message = response_body["content"][0]['text']
-                print(alerts)
-                print(assistant_message)
-                # need to post this back to the HMI
+                assistant_message = response_body["content"][0]["text"]
+
+                # Create the payload
+                response_object = {
+                    "alerts": alerts,
+                    "message": assistant_message  # Remove quotes; pass the variable itself
+                }
+
+                # Send the alert to the Flask API
+                try:
+                    response = requests.post(API_URL, json=response_object)
+                    print(f"Response from API: {response.status_code}, {response.text}")
+                except requests.exceptions.RequestException as e:
+                    print(f"Error sending alert: {e}")
+                                # need to post this back to the HMI
+        print("No alert detected!")
     except Exception as e:
         print("Execution Error:", str(e))
 

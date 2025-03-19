@@ -8,12 +8,9 @@ from flask_session import Session
 # Initialize Flask application
 application = Flask(__name__)
 
-# Enable CORS
-cors = CORS(application, origins=['http://localhost:5173'])
-application.config['CORS_HEADERS'] = 'Content-Type'
-
 # Configure application settings
 configure_app(application)
+
 Session(application)
 
 # Configure error logging

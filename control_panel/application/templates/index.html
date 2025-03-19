@@ -45,6 +45,8 @@
     {% endif %}
     {% endwith %}
 
+    <div id="alerts"></div>
+
     <h1>RTU Machine Control</h1>
     <div class="machines">
         {% for machine in ["RTU_1", "RTU_2", "RTU_3"] %}
@@ -154,7 +156,31 @@
         // Run once on page load
         ["RTU_1", "RTU_2", "RTU_3"].forEach(updateMachineStatus);
 
-    </script>
+    function fetchAlerts() {
+    fetch("/api/get_alerts")
+        .then(response => response.json())
+        .then(data => {
+            const alertBox = document.getElementById("alerts");
+            alertBox.innerHTML = "";
+
+            let alerts = data.alerts;
+            console.log(alerts)
+            const alertDiv = document.createElement("div");
+            alertDiv.className = "alert";
+            alertDiv.innerText = alerts;
+            alertBox.appendChild(alertDiv);
+
+        })
+        .catch(error => console.error("Error fetching alerts:", error));
+}
+
+
+    // Poll alerts every 5 seconds
+    setInterval(fetchAlerts, 5000);
+    fetchAlerts();
+</script>
+
+    
 </body>
 </html>
 

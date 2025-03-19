@@ -1,9 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
+from flask_session import Session
 import threading
 import time
-import random
 from application.mqtt.simulator import publish_machine_data, publish_anomaly
 from os import getenv
+import os
+import json
 import requests
 
 mod = Blueprint('api', __name__, url_prefix='/api')
@@ -15,15 +17,67 @@ machines = {
     "RTU_3": False
 }
 
+ALERTS_FILE = "alerts.json"
+# Ensure alerts file exists
+if not os.path.exists(ALERTS_FILE):
+    with open(ALERTS_FILE, "w") as f:
+        json.dump([], f)
+
 PINOT_BROKER = getenv("PINOT_BROKER")
 PINOT_API_KEY = getenv("PINOT_API_KEY")
 PINOT_QUERY_URL = f"{PINOT_BROKER}/query/sql"
+
+def load_alerts():
+    """Reads alerts from file"""
+    with open(ALERTS_FILE, "r") as f:
+        return json.load(f)
+
+def save_alerts(alerts):
+    """Writes alerts to file"""
+    with open(ALERTS_FILE, "w") as f:
+        json.dump({'alerts': alerts}, f, indent=4)
 
 def simulate_machine(machine_id):
     """Simulates machine activity and publishes MQTT data."""
     while machines[machine_id]:
         publish_machine_data(machine_id)
         time.sleep(0.1)
+
+@mod.route('/alert', methods=['POST'])
+def receive_alert():
+    """Receives an alert message and flashes it to the UI."""
+
+    data = request.get_json()
+    
+    if not data or "message" not in data:
+        return jsonify({"error": "Invalid alert message"}), 400
+    
+    if isinstance(data['message'], list):
+        messages = "\n".join(data['message'])
+    else:
+        messages = data['messages']
+
+    if isinstance(data['alerts'], list):
+        alerts = "\n".join(data['alerts'])
+    else:
+        alerts = data['alerts']
+
+    alert_message = f"{alerts} <br/> {messages}"
+
+    # Load current alerts, append the new alert, and save
+    save_alerts(alert_message)
+    return jsonify({"message": "Alert stored successfully"}), 200
+
+@mod.route("/get_alerts", methods=["GET"])
+def get_alerts():
+    """Fetches stored alerts for UI display"""
+    alerts = load_alerts()
+
+    # Ensure alerts are returned as a list, not a string
+    if isinstance(alerts, str):  
+        alerts = json.loads(alerts)  # Convert JSON string to list if needed
+
+    return jsonify(alerts)
 
 @mod.route('/start/<machine_id>', methods=['POST'])
 def start_machine(machine_id):

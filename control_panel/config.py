@@ -12,9 +12,10 @@ class BaseConfig(object):
     LOGGING_LOCATION = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../logs/messaging.log")
     LOGGING_LEVEL = logging.DEBUG
     AWS_PROFILE = os.environ.get("AWS_PROFILE", "default")
-    SESSION_PERMANENT = False
+    SESSION_PERMANENT = True
     SESSION_TYPE = os.environ.get("SESSION_TYPE", "filesystem")
-    SESSION_FILE_DIR = os.path.join(os.path.dirname(__file__), "../sessions")
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SECURE = False
     TEMPLATES_AUTO_RELOAD = True
 
 class DevelopmentConfig(BaseConfig):
