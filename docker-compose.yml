@@ -54,8 +54,8 @@ services:
       - ~/.aws:/root/.aws:ro  # Mount AWS credentials into container
     entrypoint: >
       /bin/sh -c "
-      aws kinesis describe-stream --stream-name RTU_Machine_Data --profile default || 
-      aws kinesis create-stream --stream-name RTU_Machine_Data --shard-count 1 --profile default &&
+      aws kinesis describe-stream --stream-name RTU_Machine_Data --profile ${AWS_PROFILE} || 
+      aws kinesis create-stream --stream-name RTU_Machine_Data --shard-count 3 --profile ${AWS_PROFILE} &&
       echo 'Kinesis stream created';
       exit 0;"
 

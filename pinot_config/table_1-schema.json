@@ -49,6 +49,13 @@
       "notNull": false,
       "format": "1:MILLISECONDS:EPOCH",
       "granularity": "1:MILLISECONDS"
+    },
+    {
+      "name": "event_time_trunc",
+      "dataType": "TIMESTAMP",
+      "fieldType": "DATE_TIME",
+      "format": "TIMESTAMP",
+      "granularity": "1:MILLISECONDS"
     }
   ]
 }

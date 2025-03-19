@@ -2,7 +2,7 @@
     "tableName": "aws_demo_REALTIME",
     "tableType": "REALTIME",
     "segmentsConfig": {
-      "timeColumnName": "event_time",
+      "timeColumnName": "event_time_trunc",
       "replicasPerPartition": "1",
       "minimizeDataMovement": false,
       "replication": "1",
@@ -14,6 +14,25 @@
       "tagOverrideConfig": {}
     },
     "tableIndexConfig": {
+      "starTreeIndexConfigs": [
+        {
+          "dimensionsSplitOrder": [
+            "machine_id",
+            "event_time_trunc"
+          ],
+          "functionColumnPairs": [
+            "MAX__temperature",
+            "MIN__temperature",
+            "MAX__compressor_current",
+            "MIN__compressor_current",
+            "MAX__fan_speed",
+            "MIN__fan_speed",
+            "MAX__pressure",
+            "MIN__pressure"
+          ],
+          "maxLeafRecords": 100
+        }
+      ],
       "createInvertedIndexDuringSegmentGeneration": false,
       "rangeIndexVersion": 2,
       "aggregateMetrics": false,
@@ -51,9 +70,17 @@
       "rangeIndexColumns": [],
       "sortedColumn": [],
       "loadMode": "MMAP",
-      "enableDynamicStarTreeCreation": false,
+      "enableDynamicStarTreeCreation": true,
       "columnMajorSegmentBuilderEnabled": true,
-      "noDictionarySizeRatioThreshold": 0.85
+      "noDictionarySizeRatioThreshold": 0.85,
+      "segmentPartitionConfig": {
+        "columnPartitionMap": {
+          "machine_id": {
+            "functionName": "Murmur",
+            "numPartitions": 3
+          }
+        }
+      }
     },
     "metadata": {},
     "quota": {},
@@ -61,6 +88,12 @@
     "query": {},
     "fieldConfigList": [],
     "ingestionConfig": {
+      "transformConfigs": [
+        {
+          "columnName": "event_time_trunc",
+          "transformFunction": "CAST(DATETRUNC('minute', event_time) AS TIMESTAMP)"
+        }
+      ],
       "continueOnError": false,
       "rowTimeValueCheck": false,
       "segmentTimeValueCheck": true

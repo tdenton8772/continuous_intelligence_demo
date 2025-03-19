@@ -1,0 +1,5 @@
+pdfplumber
+boto3
+langchain
+langchain-community
+nltk

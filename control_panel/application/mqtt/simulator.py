@@ -26,7 +26,7 @@ def update_sensor_values(machine_id):
     sensors = machine_sensors[machine_id]
     
     # Temperature: changes slowly over time
-    sensors["temperature"] += random.uniform(-0.5, 0.5)
+    sensors["temperature"] += random.uniform(-0.2, 0.2)
     sensors["temperature"] = max(65, min(85, sensors["temperature"]))  # Keep within range
     
     # Compressor Current: fluctuates slightly but stays stable
@@ -34,11 +34,11 @@ def update_sensor_values(machine_id):
     sensors["compressor_current"] = max(8.0, min(12.0, sensors["compressor_current"]))
     
     # Fan Speed: small gradual changes
-    sensors["fan_speed"] += random.randint(-50, 50)
+    sensors["fan_speed"] += random.randint(-10, 10)
     sensors["fan_speed"] = max(1000, min(1500, sensors["fan_speed"]))
     
     # Pressure: fluctuates within a set range
-    sensors["pressure"] += random.uniform(-1.0, 1.0)
+    sensors["pressure"] += random.uniform(-0.2, 0.2)
     sensors["pressure"] = max(45, min(55, sensors["pressure"]))
     
     return sensors
