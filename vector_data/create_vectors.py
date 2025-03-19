@@ -5,7 +5,7 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import boto3
-from langchain.embeddings import BedrockEmbeddings
+from langchain_aws.embeddings import BedrockEmbeddings
 import json
 import time
 import uuid
@@ -13,8 +13,10 @@ import uuid
 session = boto3.Session(profile_name="default")
 bedrock_client = session.client(service_name='bedrock-runtime', 
                               region_name='us-east-1')
-bedrock_embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v1",
-                                       client=bedrock_client)
+# bedrock_embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v1",
+#                                        client=bedrock_client)
+bedrock_embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v2:0",
+                                        client=bedrock_client)
 
 
 
